@@ -60,9 +60,13 @@ target_link_libraries(gazebo_grasp_fix gazebo_grasp_msgs)
 
 # Install targets
 install(TARGETS gazebo_grasp_fix gazebo_grasp_msgs
-  ARCHIVE DESTINATION lib/${PROJECT_NAME}
-  LIBRARY DESTINATION lib/${PROJECT_NAME}
-  RUNTIME DESTINATION bin/${PROJECT_NAME}
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+
+  #ARCHIVE DESTINATION lib/${PROJECT_NAME}
+  #LIBRARY DESTINATION lib/${PROJECT_NAME}
+  #RUNTIME DESTINATION bin/${PROJECT_NAME}
 )
 
 install(DIRECTORY include/
@@ -70,7 +74,8 @@ install(DIRECTORY include/
 )
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} 
-  DESTINATION include/${PROJECT_NAME}
+  DESTINATION include
+  #DESTINATION include/${PROJECT_NAME}
   FILES_MATCHING PATTERN "*.pb.h"
 )
 
