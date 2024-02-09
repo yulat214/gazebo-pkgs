@@ -1,33 +1,41 @@
 #include <gazebo/transport/transport.hh>
 
-#include <gazebo_grasp_plugin/msgs/grasp_event.pb.h>
-#include <gazebo_grasp_plugin_ros/GazeboGraspEvent.h>
-#include <ros/ros.h>
+#include "../msg/grasp_event.pb.h"
+#include <rclcpp/rclcpp.hpp>
+#include <std_msgs/msg/string.hpp>
+#include <std_msgs/msg/bool.hpp>
+#include <boost/bind.hpp>
 
-using GraspEventPtr = boost::shared_ptr<const gazebo::msgs::GraspEvent>;
+using GraspEventPtr = std::shared_ptr<const gazebo::msgs::GraspEvent>;
 
-ros::Publisher gGraspEventPublisher;
+rclcpp::Publisher<std_msgs::msg::String>::SharedPtr graspEventPublisher;
+rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr attachedPublisher;
 
 /**
  * Callback to receive gazebo grasp event messages
  */
-void ReceiveGraspMsg(const GraspEventPtr& gzMsg)
+void ReceiveGraspMsg(const boost::shared_ptr<const gazebo::msgs::GraspEvent>& gzMsg)
 {
-  ROS_INFO_STREAM("Re-publishing grasp event: " << gzMsg->DebugString());
-  gazebo_grasp_plugin_ros::GazeboGraspEvent rosMsg;
-  rosMsg.arm      = gzMsg->arm();
-  rosMsg.object   = gzMsg->object();
-  rosMsg.attached = gzMsg->attached();
-  gGraspEventPublisher.publish(rosMsg);
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("gazebo_grasp_plugin_event_republisher"), 
+                     "Re-publishing grasp event: " << gzMsg->DebugString());
+
+  auto rosMsg = std::make_unique<std_msgs::msg::String>();
+  rosMsg->data = gzMsg->arm() + "," + gzMsg->object();
+  graspEventPublisher->publish(std::move(rosMsg));
+
+  auto attachedMsg = std::make_unique<std_msgs::msg::Bool>();
+  attachedMsg->data = gzMsg->attached();
+  attachedPublisher->publish(std::move(attachedMsg));
 }
 
 int main(int argc, char** argv)
 {
   // Initialize ROS and Gazebo transport
-  ros::init(argc, argv, "gazebo_grasp_plugin_event_republisher");
+  rclcpp::init(argc, argv);
   if (!gazebo::transport::init())
   {
-    ROS_ERROR("Unable to initialize gazebo transport - is gazebo running?");
+    RCLCPP_ERROR(rclcpp::get_logger("gazebo_grasp_plugin_event_republisher"), 
+                 "Unable to initialize gazebo transport - is gazebo running?");
     return 1;
   }
   gazebo::transport::run();
@@ -40,19 +48,24 @@ int main(int argc, char** argv)
   {
     subscriber = gzNode->Subscribe("~/grasp_events", &ReceiveGraspMsg);
   }
-  catch (std::exception e)
+  catch (std::exception& e)
   {
-    ROS_ERROR_STREAM("Error subscribing to topic: " << e.what());
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("gazebo_grasp_plugin_event_republisher"), 
+                        "Error subscribing to topic: " << e.what());
     return 1;
   }
 
-  // Initialize ROS publisher
-  ros::NodeHandle   rosNode("~");
-  const std::string pubTopic = "grasp_events";
-  gGraspEventPublisher =
-    rosNode.advertise<gazebo_grasp_plugin_ros::GazeboGraspEvent>(pubTopic, 1);
 
-  ros::spin();
+  // Initialize ROS publisher
+  auto rosNode = rclcpp::Node::make_shared("gazebo_grasp_plugin_event_republisher");
+  const std::string pubTopic = "grasp_events";
+  const std::string attachedTopic = "attached_status";
+  
+  graspEventPublisher = rosNode->create_publisher<std_msgs::msg::String>(pubTopic, 10);
+  attachedPublisher = rosNode->create_publisher<std_msgs::msg::Bool>(attachedTopic, 10);
+
+  rclcpp::spin(rosNode);
+  rclcpp::shutdown();
   gazebo::transport::fini();
   return 0;
 }

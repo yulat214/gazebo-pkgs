@@ -9,7 +9,7 @@
 #include <gazebo_version_helpers/GazeboVersionHelpers.h>
 
 #include <msgs/grasp_event.pb.h>
-
+#include "rclcpp/rclcpp.hpp"
 using gazebo::GazeboGraspFix;
 using gazebo::GzVector3;
 
@@ -76,7 +76,7 @@ void GazeboGraspFix::InitValues()
 ////////////////////////////////////////////////////////////////////////////////
 void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
-  gzmsg << "Loading grasp-fix plugin" << std::endl;
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Loading grasp-fix plugin");
 
   // ++++++++++++ Read parameters and initialize fields  +++++++++++++++
 
@@ -87,10 +87,9 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     _sdf->GetElement("disable_collisions_on_attach");
   if (!disableCollisionsOnAttachElem)
   {
-    gzmsg << "GazeboGraspFix: Using default " <<
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using default " <<
           DEFAULT_DISABLE_COLLISIONS_ON_ATTACH <<
-          " because no <disable_collisions_on_attach> element specified." <<
-          std::endl;
+          " because no <disable_collisions_on_attach> element specified.");
     this->disableCollisionsOnAttach = DEFAULT_DISABLE_COLLISIONS_ON_ATTACH;
   }
   else
@@ -99,18 +98,17 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     bool bVal = false;
     if ((str == "true") || (str == "1"))  bVal = true;
     this->disableCollisionsOnAttach = bVal;
-    gzmsg << "GazeboGraspFix: Using disable_collisions_on_attach " <<
-          this->disableCollisionsOnAttach << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using disable_collisions_on_attach " <<
+          this->disableCollisionsOnAttach);
   }
 
   sdf::ElementPtr forcesAngleToleranceElem =
     _sdf->GetElement("forces_angle_tolerance");
   if (!forcesAngleToleranceElem)
   {
-    gzmsg << "GazeboGraspFix: Using default tolerance of " <<
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using default tolerance of " <<
           DEFAULT_FORCES_ANGLE_TOLERANCE <<
-          " because no <forces_angle_tolerance> element specified." <<
-          std::endl;
+          " because no <forces_angle_tolerance> element specified.");
     this->forcesAngleTolerance = DEFAULT_FORCES_ANGLE_TOLERANCE * M_PI / 180;
   }
   else
@@ -123,8 +121,8 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   double _updateSecs;
   if (!updateRateElem)
   {
-    gzmsg << "GazeboGraspFix: Using  " << DEFAULT_UPDATE_RATE <<
-          " because no <updateRate_tag> element specified." << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using  " << DEFAULT_UPDATE_RATE <<
+          " because no <updateRate_tag> element specified.");
     _updateSecs = 1.0 / DEFAULT_UPDATE_RATE;
   }
   else
@@ -132,22 +130,22 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     int _rate = updateRateElem->Get<int>();
     double _updateRate = _rate;
     _updateSecs = 1.0 / _updateRate;
-    gzmsg << "GazeboGraspFix: Using update rate " << _rate << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using update rate " << _rate);
   }
   this->updateRate = common::Time(0, common::Time::SecToNano(_updateSecs));
 
   sdf::ElementPtr maxGripCountElem = _sdf->GetElement("max_grip_count");
   if (!maxGripCountElem)
   {
-    gzmsg << "GazeboGraspFix: Using  " << DEFAULT_MAX_GRIP_COUNT <<
-          " because no <max_grip_count> element specified." << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using  " << DEFAULT_MAX_GRIP_COUNT <<
+          " because no <max_grip_count> element specified.");
     this->maxGripCount = DEFAULT_MAX_GRIP_COUNT;
   }
   else
   {
     this->maxGripCount = maxGripCountElem->Get<int>();
-    gzmsg << "GazeboGraspFix: Using max_grip_count "
-          << this->maxGripCount << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using max_grip_count "
+          << this->maxGripCount);
   }
 
   sdf::ElementPtr gripCountThresholdElem =
@@ -155,29 +153,28 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   if (!gripCountThresholdElem)
   {
     this->gripCountThreshold = floor(this->maxGripCount / 2.0);
-    gzmsg << "GazeboGraspFix: Using  " << this->gripCountThreshold <<
-          " because no <grip_count_threshold> element specified." <<
-          std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using  " << this->gripCountThreshold <<
+          " because no <grip_count_threshold> element specified.");
   }
   else
   {
     this->gripCountThreshold = gripCountThresholdElem->Get<int>();
-    gzmsg << "GazeboGraspFix: Using grip_count_threshold " <<
-          this->gripCountThreshold << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using grip_count_threshold " <<
+          this->gripCountThreshold);
   }
 
   sdf::ElementPtr releaseToleranceElem = _sdf->GetElement("release_tolerance");
   if (!releaseToleranceElem)
   {
-    gzmsg << "GazeboGraspFix: Using  " << DEFAULT_RELEASE_TOLERANCE <<
-          " because no <release_tolerance> element specified." << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using  " << DEFAULT_RELEASE_TOLERANCE <<
+          " because no <release_tolerance> element specified.");
     this->releaseTolerance = DEFAULT_RELEASE_TOLERANCE;
   }
   else
   {
     this->releaseTolerance = releaseToleranceElem->Get<float>();
-    gzmsg << "GazeboGraspFix: Using release_tolerance " <<
-          this->releaseTolerance << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Using release_tolerance " <<
+          this->releaseTolerance);
   }
 
   // will contain all names of collision entities involved from all arms
@@ -186,8 +183,7 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
   sdf::ElementPtr armElem = _sdf->GetElement("arm");
   if (!armElem)
   {
-    gzerr << "GazeboGraspFix: Cannot load the GazeboGraspFix without any <arm> declarations"
-          << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Cannot load the GazeboGraspFix without any <arm> declarations");
     return;
   }
   // add all arms:
@@ -199,9 +195,8 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
     if (!handLinkElem || !fingerLinkElem || !armNameElem)
     {
-      gzerr << "ERROR: GazeboGraspFix: Cannot use a GazeboGraspFix arm because "
-            << "not all of <arm_name>, <palm_link> and <gripper_link> elements specified in URDF/SDF. Skipping."
-            << std::endl;
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "ERROR: GazeboGraspFix: Cannot use a GazeboGraspFix arm because "
+            << "not all of <arm_name>, <palm_link> and <gripper_link> elements specified in URDF/SDF. Skipping.");
       continue;
     }
 
@@ -220,16 +215,15 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     // add new gripper
     if (grippers.find(armName) != grippers.end())
     {
-      gzerr << "GazeboGraspFix: Arm named " << armName <<
-            " was already added, cannot add it twice." << std::endl;
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Arm named " << armName <<
+            " was already added, cannot add it twice.");
     }
     GazeboGraspGripper &gripper = grippers[armName];
     std::map<std::string, physics::CollisionPtr> _collisions;
     if (!gripper.Init(_parent, armName, palmName, fingerLinkNames,
                       disableCollisionsOnAttach, _collisions))
     {
-      gzerr << "GazeboGraspFix: Could not initialize arm " << armName << ". Skipping."
-            << std::endl;
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Could not initialize arm " << armName << ". Skipping.");
       grippers.erase(armName);
       continue;
     }
@@ -245,12 +239,11 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
       if (collIter !=
           this->collisions.end())   //this collision was already added before
       {
-        gzwarn << "GazeboGraspFix: Adding Gazebo collision link element " << collName <<
-               " multiple times, the grasp plugin may not work properly" << std::endl;
+        RCLCPP_WARN_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Adding Gazebo collision link element " << collName <<
+               " multiple times, the grasp plugin may not work properly");
         continue;
       }
-      gzmsg << "GazeboGraspFix: Adding collision scoped name " << collName <<
-            std::endl;
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Adding collision scoped name " << collName);
       this->collisions[collName] = armName;
       collisionNames.push_back(collName);
     }
@@ -258,8 +251,8 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
   if (grippers.empty())
   {
-    gzerr << "ERROR: GazeboGraspFix: Cannot use a GazeboGraspFix because "
-          << "no arms were configured successfully. Plugin will not work." << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "ERROR: GazeboGraspFix: Cannot use a GazeboGraspFix because "
+          << "no arms were configured successfully. Plugin will not work.");
     return;
   }
 
@@ -275,18 +268,21 @@ void GazeboGraspFix::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
                       collisionNames);
   if (!this->contactSub)
   {
-    gzmsg << "Subscribing contact manager to topic " << topic << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Subscribing contact manager to topic " << topic);
     bool latching = false;
     this->contactSub = this->node->Subscribe(topic, &GazeboGraspFix::OnContact,
                        this, latching);
   }
 
-  gzmsg << "Advertising grasping events on topic grasp_events" << std::endl;
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Advertising grasping events on topic grasp_events");
   this->eventsPub = this->node->Advertise<msgs::GraspEvent>("~/grasp_events");
 
   update_connection = event::Events::ConnectWorldUpdateEnd(boost::bind(
                         &GazeboGraspFix::OnUpdate, this));
+
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "grasp plugin is loaded");
 }
+
 
 ////////////////////////////////////////////////////////////////////////////////
 class GazeboGraspFix::ObjectContactInfo
@@ -367,8 +363,8 @@ bool GazeboGraspFix::ObjectAttachedToGripper(const std::string &gripperName,
         gripperName);
   if (gIt == grippers.end())
   {
-    gzerr << "GazeboGraspFix: Inconsistency, gripper " << gripperName <<
-          " not found in GazeboGraspFix grippers" << std::endl;
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Inconsistency, gripper " << gripperName <<
+          " not found in GazeboGraspFix grippers");
     return false;
   }
   const GazeboGraspGripper &gripper = gIt->second;
@@ -455,12 +451,14 @@ bool CheckGrip(const std::vector<GzVector3> &forces,
   if (((lengthRatio > 1) || (lengthRatio < 0)) && (lengthRatio > 1e-04
       && (fabs(lengthRatio - 1) > 1e-04)))
   {
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "ERROR: CheckGrip: always specify a lengthRatio of [0..1]");
     std::cerr << "ERROR: CheckGrip: always specify a lengthRatio of [0..1]" <<
               std::endl;
     return false;
   }
   if (minAngleDiff < M_PI_2)
   {
+    RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "ERROR: CheckGrip: min angle must be at least 90 degrees (PI/2)");
     std::cerr << "ERROR: CheckGrip: min angle must be at least 90 degrees (PI/2)" <<
               std::endl;
     return false;
@@ -481,13 +479,15 @@ bool CheckGrip(const std::vector<GzVector3> &forces,
       _v2/=l2;
       float angle=acos(_v1.Dot(_v2));*/
       float angle = AngularDistance(v1, v2);
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Angular distance is " << angle << " while the min is " << minAngleDiff/2);
       // gzmsg<<"Angular distance between v1.len="<<v1.GetLength()<<" and v2.len="<<v2.GetLength()<<": "<<angle*180/M_PI<<std::endl;
-      if (angle > minAngleDiff)
+      if (angle > minAngleDiff/2)
       {
         float ratio;
         if (l1 > l2) ratio = l2 / l1;
         else ratio = l1 / l2;
         // gzmsg<<"Got angle "<<angle<<", ratio "<<ratio<<std::endl;
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Ratio is " << ratio << " while the min is " << lengthRatio);
         if (ratio >= lengthRatio)
         {
           // gzmsg<<"CheckGrip() is true"<<std::endl;
@@ -524,6 +524,7 @@ void GazeboGraspFix::OnUpdate()
   {
     std::string objName = objIt->first;
     //gzmsg<<"Examining object collisions with "<<objName<<std::endl;
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Examining object collisions with "<<objName);
 
     // create new entry in accumulated results map and get reference to fill in:
     ObjectContactInfo &objContInfo = objectContactInfo[objName];
@@ -536,6 +537,7 @@ void GazeboGraspFix::OnUpdate()
       CollidingPoint &collP = lIt->second;
       GzVector3 avgForce = collP.force / collP.sum;
       // gzmsg << "Found collision with "<<linkName<<": "<<avgForce.x<<", "<<avgForce.y<<", "<<avgForce.z<<" (avg over "<<collP.sum<<")"<<std::endl;
+      // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Found collision with "<<linkName);
       objContInfo.appliedForces.push_back(avgForce);
       // insert the gripper (if it doesn't exist yet) and increase contact counter
       int &gContactCnt = objContInfo.grippersInvolved[collP.gripperName];
@@ -564,6 +566,7 @@ void GazeboGraspFix::OnUpdate()
     const ObjectContactInfo &objContInfo = ocIt->second;
 
     // gzmsg<<"Number applied forces on "<<objName<<": "<<objContInfo.appliedForces.size()<<std::endl;
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Number applied forces on "<<objName<<": "<<objContInfo.appliedForces.size());
   
     // TODO: remove this test print, for issue #26 ------------------- 
 #if 0
@@ -587,6 +590,7 @@ void GazeboGraspFix::OnUpdate()
     grippedObjects.insert(objName);
 
     //gzmsg<<"Grasp Held: "<<objName<<" grip count: "<<this->gripCounts[objName]<<std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Grasp Held: "<<objName<<" grip count: "<<this->gripCounts[objName]);
 
     int &counts = this->gripCounts[objName];
     if (counts < this->maxGripCount) ++counts;
@@ -596,6 +600,7 @@ void GazeboGraspFix::OnUpdate()
       continue;
 
     //gzmsg<<"GRIPPING "<<objName<<", grip count "<<counts<<" (threshold "<<this->gripCountThreshold<<")"<<std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GRIPPING "<<objName<<", grip count "<<counts<<" (threshold "<<this->gripCountThreshold<<")");
 
     // find out if any of the grippers involved in the grasp is already grasping the object.
     // If there is no such gripper, attach it to the gripper which has most contact points.
@@ -605,8 +610,10 @@ void GazeboGraspFix::OnUpdate()
     if (isAttachedToGripper)
     {
       // the object is already attached to a gripper, so it does not need to be attached.
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix has found that object that is already attached");
       // gzmsg << "GazeboGraspFix has found that object "<<
       //     gripper.attachedObject()<<" is already attached to gripper "<<gripperName;
+      //     gripper.attachedObject()<<" is already attached to gripper "<<gripperName);
       continue;
     }
 
@@ -616,23 +623,23 @@ void GazeboGraspFix::OnUpdate()
           graspingGripperName);
     if (gIt == grippers.end())
     {
-      gzerr << "GazeboGraspFix: Inconsistency, gripper '" << graspingGripperName
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Inconsistency, gripper '" << graspingGripperName
             << "' not found in GazeboGraspFix grippers, so cannot do attachment of object "
-            << objName << std::endl;
+            << objName);
       continue;
     }
     GazeboGraspGripper &graspingGripper = gIt->second;
 
     if (graspingGripper.isObjectAttached())
     {
-      gzerr << "GazeboGraspFix has found that object " <<
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix has found that object " <<
             graspingGripper.attachedObject() << " is already attached to gripper " <<
-            graspingGripperName << ", so can't grasp '" << objName << "'!" << std::endl;
+            graspingGripperName << ", so can't grasp '" << objName << "'!");
       continue;
     }
 
-    gzmsg << "GazeboGraspFix: Attaching " << objName << " to gripper " <<
-          graspingGripperName << "." << std::endl;
+    RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Attaching " << objName << " to gripper " <<
+          graspingGripperName << ".");
 
     // Store the array of contact poses which played part in the grip, sorted by colliding link.
     // Filter out all link names of other grippers, otherwise if the other gripper moves
@@ -661,8 +668,8 @@ void GazeboGraspFix::OnUpdate()
 
     if (!graspingGripper.HandleAttach(objName))
     {
-      gzerr << "GazeboGraspFix: Could not attach object " << objName << " to gripper "
-            << graspingGripperName << std::endl;
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Could not attach object " << objName << " to gripper "
+            << graspingGripperName);
     }
     this->OnAttach(objName, graspingGripperName);
   }  // for all objects
@@ -691,6 +698,7 @@ void GazeboGraspFix::OnUpdate()
     // the object does not satisfy "gripped" criteria, so potentially has to be released.
 
     // gzmsg<<"NOT-GRIPPING "<<objName<<", grip count "<<gripCntIt->second<<" (threshold "<<this->gripCountThreshold<<")"<<std::endl;
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "NOT-GRIPPING "<<objName<<", grip count "<<gripCntIt->second<<" (threshold "<<this->gripCountThreshold<<")");
 
     if (gripCntIt->second > 0) --(gripCntIt->second);
 
@@ -705,6 +713,7 @@ void GazeboGraspFix::OnUpdate()
     const std::string &graspingGripperName = attIt->second;
 
     // gzmsg<<"Considering "<<objName<<" for detachment."<<std::endl;
+    // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "Considering "<<objName<<" for detachment.");
 
     // Object should potentially be detached now.
     // However, this happens too easily when just considering the count, as the fingers
@@ -724,6 +733,8 @@ void GazeboGraspFix::OnUpdate()
     initCollIt = this->attachGripContacts.find(objName);
     if (initCollIt == this->attachGripContacts.end())
     {
+      RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "ERROR: Consistency: Could not find attachGripContacts for " <<
+                objName);
       std::cerr << "ERROR: Consistency: Could not find attachGripContacts for " <<
                 objName << std::endl;
       continue;
@@ -793,14 +804,14 @@ void GazeboGraspFix::OnUpdate()
             graspingGripperName);
       if (gggIt == grippers.end())
       {
-        gzerr << "GazeboGraspFix: Inconsistency: Gazebo gripper '" <<
-              graspingGripperName << "' not found when checking for detachment" << std::endl;
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Inconsistency: Gazebo gripper '" <<
+              graspingGripperName << "' not found when checking for detachment");
         continue;
       }
       GazeboGraspGripper &graspingGripper = gggIt->second;
       // Now, detach the object:
-      gzmsg << "GazeboGraspFix: Detaching " << objName << " from gripper " <<
-            graspingGripperName << "." << std::endl;
+      RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Detaching " << objName << " from gripper " <<
+            graspingGripperName << ".");
       graspingGripper.HandleDetach(objName);
       this->OnDetach(objName, graspingGripperName);
       gripCntIt->second = 0;
@@ -815,6 +826,7 @@ void GazeboGraspFix::OnUpdate()
 void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
 {
   //gzmsg<<"CONTACT! "<<std::endl;//<<_contact<<std::endl;
+  // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "CONTACT! ");
   // for all contacts...
   for (int i = 0; i < _msg->contact_size(); ++i)
   {
@@ -832,6 +844,7 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
       std::string name2 = collision2->GetScopedName();
 
       //gzmsg<<"OBJ CONTACT! "<<name1<<" / "<<name2<<std::endl;
+      // RCLCPP_INFO_STREAM(rclcpp::get_logger("grasp"), "OBJ CONTACT! "<<name1<<" / "<<name2);
       int count = _msg->contact(i).position_size();
 
       // Check to see if the contact arrays all have the same size.
@@ -839,8 +852,7 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
           (count != _msg->contact(i).wrench_size()) ||
           (count != _msg->contact(i).depth_size()))
       {
-        gzerr << "GazeboGraspFix: Contact message has invalid array sizes\n" <<
-              std::endl;
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "GazeboGraspFix: Contact message has invalid array sizes\n");
         continue;
       }
 
@@ -853,6 +865,8 @@ void GazeboGraspFix::OnContact(const ConstContactsPtr &_msg)
 
       if (contact.count < 1)
       {
+        RCLCPP_ERROR_STREAM(rclcpp::get_logger("grasp"), "ERROR: GazeboGraspFix: Not enough forces given for contact of ."
+                  << name1 << " / " << name2);
         std::cerr << "ERROR: GazeboGraspFix: Not enough forces given for contact of ."
                   << name1 << " / " << name2 << std::endl;
         continue;
